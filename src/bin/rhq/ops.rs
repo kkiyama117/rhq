@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::{
     app_from_crate, crate_authors, crate_description, crate_name, crate_version, App, AppSettings,
-    SubCommand,
+    ArgMatches, SubCommand,
 };
 
 mod add;
@@ -29,6 +29,12 @@ macro_rules! def_app {
             }
         }
     }
+}
+
+trait ClapCommand<'a> {
+    fn app<'b: 'a>(app: App<'a, 'b>) -> App<'a, 'b>;
+    fn from_matches<'b: 'a>(m: &'b ArgMatches<'a>) -> Self;
+    fn run(self) -> Result<()>;
 }
 
 def_app! {

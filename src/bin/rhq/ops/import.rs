@@ -1,3 +1,4 @@
+use crate::ops::ClapCommand;
 use anyhow::Result;
 use clap::{App, ArgMatches};
 use rhq::Workspace;
@@ -10,15 +11,15 @@ pub struct ImportCommand {
     verbose: bool,
 }
 
-impl ImportCommand {
-    pub fn app<'a, 'b: 'a>(app: App<'a, 'b>) -> App<'a, 'b> {
+impl<'a> ClapCommand<'a> for ImportCommand {
+    fn app<'b: 'a>(app: App<'a, 'b>) -> App<'a, 'b> {
         app.about("Import existed repositories into management")
             .arg_from_usage("[roots]...      'Root directories contains for scanning'")
             .arg_from_usage("--depth=[depth] 'Maximal depth of entries for each base directory'")
             .arg_from_usage("-v, --verbose   'Use verbose output'")
     }
 
-    pub fn from_matches(m: &ArgMatches) -> ImportCommand {
+    fn from_matches<'b: 'a>(m: &ArgMatches) -> ImportCommand {
         ImportCommand {
             roots: m.values_of("roots").map(|s| s.map(PathBuf::from).collect()),
             depth: m.value_of("depth").and_then(|s| s.parse().ok()),
@@ -26,7 +27,7 @@ impl ImportCommand {
         }
     }
 
-    pub fn run(self) -> Result<()> {
+    fn run(self) -> Result<()> {
         let mut workspace = Workspace::new()?.verbose_output(self.verbose);
 
         let roots = self

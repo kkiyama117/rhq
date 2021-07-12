@@ -1,3 +1,4 @@
+use crate::ops::ClapCommand;
 use anyhow::Result;
 use clap::{App, ArgMatches};
 use rhq::Workspace;
@@ -9,21 +10,21 @@ pub struct AddCommand {
     verbose: bool,
 }
 
-impl AddCommand {
-    pub fn app<'a, 'b: 'a>(app: App<'a, 'b>) -> App<'a, 'b> {
+impl<'a> ClapCommand<'a> for AddCommand {
+    fn app<'b: 'a>(app: App<'a, 'b>) -> App<'a, 'b> {
         app.about("Add existed repositories into management")
             .arg_from_usage("[paths]...      'Location of local repositories'")
             .arg_from_usage("-v, --verbose   'Use verbose output'")
     }
 
-    pub fn from_matches(m: &ArgMatches) -> AddCommand {
+    fn from_matches<'b: 'a>(m: &ArgMatches) -> AddCommand {
         AddCommand {
             paths: m.values_of("paths").map(|s| s.map(PathBuf::from).collect()),
             verbose: m.is_present("verbose"),
         }
     }
 
-    pub fn run(self) -> Result<()> {
+    fn run(self) -> Result<()> {
         let paths = self
             .paths
             .unwrap_or_else(|| vec![env::current_dir().expect("env::current_dir()")]);

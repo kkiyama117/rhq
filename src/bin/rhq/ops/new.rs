@@ -1,3 +1,4 @@
+use crate::ops::ClapCommand;
 use anyhow::Result;
 use clap::{App, Arg, ArgMatches};
 use rhq::{
@@ -15,8 +16,8 @@ pub struct NewCommand<'a> {
     ssh: bool,
 }
 
-impl<'a> NewCommand<'a> {
-    pub fn app<'b: 'a>(app: App<'a, 'b>) -> App<'a, 'b> {
+impl<'a> ClapCommand<'a> for NewCommand<'a> {
+    fn app<'b: 'a>(app: App<'a, 'b>) -> App<'a, 'b> {
         app.about("Create a new repository and add it into management")
             .arg_from_usage("<query>           'Path of target repository, or URL-like pattern'")
             .arg_from_usage(
@@ -30,7 +31,7 @@ impl<'a> NewCommand<'a> {
             .arg_from_usage("-s, --ssh        'Use SSH protocol instead of HTTP(s)'")
     }
 
-    pub fn from_matches<'b: 'a>(m: &'b ArgMatches<'a>) -> NewCommand<'a> {
+    fn from_matches<'b: 'a>(m: &'b ArgMatches<'a>) -> NewCommand<'a> {
         NewCommand {
             query: m.value_of("query").and_then(|s| s.parse().ok()).unwrap(),
             root: m.value_of("root").map(Path::new),
@@ -39,7 +40,7 @@ impl<'a> NewCommand<'a> {
         }
     }
 
-    pub fn run(self) -> Result<()> {
+    fn run(self) -> Result<()> {
         let mut workspace = Workspace::new()?;
         if let Some(root) = self.root {
             workspace.set_root_dir(root);

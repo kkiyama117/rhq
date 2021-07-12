@@ -1,3 +1,4 @@
+use crate::ops::ClapCommand;
 use anyhow::Result;
 use clap::{App, AppSettings, Arg, ArgMatches};
 use std::path::Path;
@@ -8,8 +9,8 @@ pub struct CompletionCommand<'a> {
     out_file: Option<&'a Path>,
 }
 
-impl<'a> CompletionCommand<'a> {
-    pub fn app<'b: 'a>(app: App<'a, 'b>) -> App<'a, 'b> {
+impl<'a> ClapCommand<'a> for CompletionCommand<'a> {
+    fn app<'b: 'a>(app: App<'a, 'b>) -> App<'a, 'b> {
         app.about("Generate completion scripts for your shell")
             .setting(AppSettings::ArgRequiredElseHelp)
             .arg(Arg::from_usage("<shell> 'Target shell'").possible_values(&[
@@ -21,14 +22,14 @@ impl<'a> CompletionCommand<'a> {
             .arg_from_usage("[out-file] 'Destination path to generated script'")
     }
 
-    pub fn from_matches<'b: 'a>(m: &'b ArgMatches<'a>) -> CompletionCommand<'a> {
+    fn from_matches<'b: 'a>(m: &'b ArgMatches<'a>) -> CompletionCommand<'a> {
         CompletionCommand {
             shell: m.value_of("shell").and_then(|s| s.parse().ok()).unwrap(),
             out_file: m.value_of("out-file").map(Path::new),
         }
     }
 
-    pub fn run(self) -> Result<()> {
+    fn run(self) -> Result<()> {
         if let Some(path) = self.out_file {
             let mut file = ::std::fs::OpenOptions::new()
                 .write(true)

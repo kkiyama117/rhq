@@ -1,3 +1,4 @@
+use crate::ops::ClapCommand;
 use anyhow::Result;
 use clap::{App, Arg, ArgMatches};
 use rhq::Workspace;
@@ -26,8 +27,8 @@ pub struct ListCommand {
     format: ListFormat,
 }
 
-impl ListCommand {
-    pub fn app<'a, 'b: 'a>(app: App<'a, 'b>) -> App<'a, 'b> {
+impl<'a> ClapCommand<'a> for ListCommand {
+    fn app<'b: 'a>(app: App<'a, 'b>) -> App<'a, 'b> {
         app.about("List local repositories managed by rhq").arg(
             Arg::from_usage("--format=[format] 'List format'")
                 .possible_values(&["name", "fullpath"])
@@ -35,13 +36,13 @@ impl ListCommand {
         )
     }
 
-    pub fn from_matches(m: &ArgMatches) -> ListCommand {
+    fn from_matches<'b: 'a>(m: &ArgMatches) -> ListCommand {
         ListCommand {
             format: m.value_of("format").and_then(|s| s.parse().ok()).unwrap(),
         }
     }
 
-    pub fn run(self) -> Result<()> {
+    fn run(self) -> Result<()> {
         let workspace = Workspace::new()?;
         workspace.for_each_repo(|repo| {
             match self.format {

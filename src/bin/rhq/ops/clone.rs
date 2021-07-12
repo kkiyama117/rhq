@@ -1,3 +1,4 @@
+use crate::ops::ClapCommand;
 use anyhow::Result;
 use clap::{App, Arg, ArgMatches};
 use rhq::{query::Query, vcs::Vcs, vcs::POSSIBLE_VCS, Remote, Workspace};
@@ -12,8 +13,8 @@ pub struct CloneCommand<'a> {
     vcs: Vcs,
 }
 
-impl<'a> CloneCommand<'a> {
-    pub fn app<'b: 'a>(app: App<'a, 'b>) -> App<'a, 'b> {
+impl<'a> ClapCommand<'a> for CloneCommand<'a> {
+    fn app<'b: 'a>(app: App<'a, 'b>) -> App<'a, 'b> {
         app.about("Clone remote repositories, and then add it under management")
             .arg_from_usage("<query>          'an URL or a string to determine the URL of remote repository'")
             .arg_from_usage("[dest]           'Destination directory of cloned repository'")
@@ -26,7 +27,7 @@ impl<'a> CloneCommand<'a> {
             )
     }
 
-    pub fn from_matches<'b: 'a>(m: &'b ArgMatches<'a>) -> CloneCommand<'a> {
+    fn from_matches<'b: 'a>(m: &'b ArgMatches<'a>) -> CloneCommand<'a> {
         CloneCommand {
             query: m.value_of("query").and_then(|s| s.parse().ok()).unwrap(),
             dest: m.value_of("dest").map(PathBuf::from),
@@ -36,7 +37,7 @@ impl<'a> CloneCommand<'a> {
         }
     }
 
-    pub fn run(self) -> Result<()> {
+    fn run(self) -> Result<()> {
         let mut workspace = Workspace::new()?;
         if let Some(root) = self.root {
             workspace.set_root_dir(root);
