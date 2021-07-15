@@ -49,35 +49,28 @@ where
 }
 
 pub fn get_remote_url<P: AsRef<Path>>(repo_path: P) -> Result<Option<String>> {
+    let repo = Repository::open(&repo_path)?;
     // 1. get current branch name.
-    let output = process::piped("git")
-        .current_dir(&repo_path)
-        .args(&["rev-parse", "--abbrev-ref", "HEAD"])
-        .output()?;
-    if !output.status.success() {
-        return Err(anyhow!("failed to get branch name"));
-    }
-    let branch = String::from_utf8_lossy(&output.stdout).trim().to_owned();
+    if let Some(reference) = repo.revparse_ext("HEAD")?.1 {
+        if let Some(branch) = reference.name() {
+            let branch = branch.trim_start_matches("refs/heads/");
 
-    // 2. get remote name of upstream ref
-    let arg = format!("{}@{{upstream}}", branch);
-    let output = process::piped("git")
-        .current_dir(&repo_path)
-        .args(&["rev-parse", "--abbrev-ref", &arg])
-        .output()?;
-    if !output.status.success() {
-        return Ok(None);
+            // 2. get remote name of upstream ref
+            let arg = format!("{}@{{upstream}}", branch);
+            if let Some(reference) = repo.revparse_ext(arg.as_str())?.1 {
+                if (&reference).is_remote() {
+                    let upstream = reference
+                        .name()
+                        .unwrap()
+                        .trim_start_matches("refs/remotes/")
+                        .trim_end_matches(&format!("/{}", branch));
+                    // 3. get remote URL of upstream ref
+                    return Ok(repo.find_remote(upstream)?.url().map(Into::into));
+                }
+            }
+        }
     }
-    let upstream = String::from_utf8_lossy(&output.stdout)
-        .trim()
-        .trim_end_matches(&format!("/{}", branch))
-        .to_owned();
-
-    // 3. get remote URL of upstream ref
-    Ok(Repository::open(repo_path)?
-        .find_remote(&upstream)?
-        .url()
-        .map(Into::into))
+    Ok(None)
 }
 
 pub fn set_remote<P: AsRef<Path>>(path: P, url: &str) -> Result<()> {
