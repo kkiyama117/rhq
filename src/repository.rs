@@ -50,10 +50,7 @@ impl Repository {
     /// Check existence of repository and drop if not exists.
     pub fn refresh(self) -> Option<Self> {
         match self.vcs.get_remote_url(&self.path) {
-            Ok(url) => {
-                println!("{:?}", url);
-                return Self::new(self.path, self.vcs, url.map(Remote::new)).ok();
-            }
+            Ok(url) => Self::new(self.path, self.vcs, url.map(Remote::new)).ok(),
             _ => None,
         }
     }
