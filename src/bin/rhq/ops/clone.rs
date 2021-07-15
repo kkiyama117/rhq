@@ -11,6 +11,7 @@ pub struct CloneCommand<'a> {
     root: Option<&'a Path>,
     ssh: bool,
     vcs: Vcs,
+    verbose: bool,
 }
 
 impl<'a> ClapCommand<'a> for CloneCommand<'a> {
@@ -20,6 +21,7 @@ impl<'a> ClapCommand<'a> for CloneCommand<'a> {
             .arg_from_usage("[dest]           'Destination directory of cloned repository'")
             .arg_from_usage("--root=[root]    'Path to determine the destination directory of cloned repository'")
             .arg_from_usage("-s, --ssh        'Use SSH protocol instead of HTTP(s)'")
+            .arg_from_usage("-v, --verbose    'Use verbose output'")
             .arg(
                 Arg::from_usage("--vcs=[vcs] 'Used Version Control System'")
                     .possible_values(POSSIBLE_VCS)
@@ -34,11 +36,12 @@ impl<'a> ClapCommand<'a> for CloneCommand<'a> {
             root: m.value_of("root").map(Path::new),
             ssh: m.is_present("ssh"),
             vcs: m.value_of("vcs").and_then(|s| s.parse().ok()).unwrap(),
+            verbose: m.is_present("verbose"),
         }
     }
 
     fn run(self) -> Result<()> {
-        let mut workspace = Workspace::new()?;
+        let mut workspace = Workspace::new()?.verbose_output(self.verbose);
         if let Some(root) = self.root {
             workspace.set_root_dir(root);
         }
